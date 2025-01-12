@@ -1,9 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, ShoppingCart, Store, Users } from 'lucide-react'
+import { Package, ShoppingCart, Star, TrendingDown } from 'lucide-react'
 import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import type { DashboardData } from '@/types/dashboard'
+import { formatCurrency } from '@/lib/utils'
 
+// Fake data for charts
 const data = [
   {
     name: "Jan",
@@ -32,6 +36,30 @@ const data = [
 ]
 
 export default function DashboardPage() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/dashboard')
+      .then(res => res.json())
+      .then((data: DashboardData) => {
+        setDashboardData(data)
+        setLoading(false)
+      })
+      .catch(error => {
+        console.error('Error fetching dashboard data:', error)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>
+  }
+
+  if (!dashboardData) {
+    return <div>Error loading dashboard data</div>
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -42,45 +70,45 @@ export default function DashboardPage() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹45,231.89</div>
+            <div className="text-2xl font-bold">{dashboardData.total_orders.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              +20.1% from last month
+              {formatCurrency(dashboardData.average_order_value)} avg. order value
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
+            <div className="text-2xl font-bold">{formatCurrency(dashboardData.total_revenue)}</div>
             <p className="text-xs text-muted-foreground">
-              +180.1% from last month
+              Across all locations
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Stores</CardTitle>
-            <Store className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
+            <div className="text-2xl font-bold">{dashboardData.average_feedback_score.toFixed(2)}/5</div>
             <p className="text-xs text-muted-foreground">
-              +19% from last month
+              Customer satisfaction score
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cancellation Rate</CardTitle>
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
+            <div className="text-2xl font-bold">{(dashboardData.cancellation_rate * 100).toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              +201 since last hour
+              Of total orders
             </p>
           </CardContent>
         </Card>
